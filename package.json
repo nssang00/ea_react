@@ -1,0 +1,22 @@
+{
+  "name": "ea-modeler-esbuild-static",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node esbuild.config.mjs --serve",
+    "build": "node esbuild.config.mjs",
+    "preview": "npx serve dist"
+  },
+  "dependencies": {
+    "@ant-design/icons": "latest",
+    "@xyflow/react": "latest",
+    "antd": "latest",
+    "mermaid": "^11.15.0",
+    "react": "latest",
+    "react-dom": "latest",
+    "zustand": "latest"
+  },
+  "devDependencies": {
+    "esbuild": "latest"
+  }
+}
