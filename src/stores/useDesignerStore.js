@@ -7,6 +7,7 @@ export const useDesignerStore = create((set, get) => ({
   modelStatusByProjectId: {},
   modelErrorByProjectId: {},
   selectedElementId: null,
+  activeExplorerViewId: 'model',
   dirty: false,
 
   setProjectModelStatus: (projectId, status, error = null) => {
@@ -63,6 +64,7 @@ export const useDesignerStore = create((set, get) => ({
   },
 
   selectElement: (id) => set({ selectedElementId: id }),
+  setActiveExplorerView: (id) => set({ activeExplorerViewId: id }),
 
   updateElement: (id, patch) => {
     const model = get().model;
@@ -120,6 +122,39 @@ export const useDesignerStore = create((set, get) => ({
     });
   },
 
+  updateQosProperty: (id, entityKey, path, value) => {
+    const model = get().model;
+    const current = model?.elementsById[id];
+    if (!current) return;
+
+    set((state) => {
+      const model = state.model;
+      const nextProperties = updateNestedProperty(current.properties, [entityKey, ...path.split('.')], value);
+      const nextElement = {
+        ...current,
+        properties: {
+          ...nextProperties,
+          qosJson: JSON.stringify(stripGeneratedProperties(nextProperties), null, 2),
+        },
+      };
+      const nextModel = {
+        ...model,
+        elementsById: {
+          ...model.elementsById,
+          [id]: nextElement,
+        },
+      };
+
+      return {
+        model: nextModel,
+        modelByProjectId: model
+          ? { ...state.modelByProjectId, [state.modelProjectId]: nextModel }
+          : state.modelByProjectId,
+        dirty: true,
+      };
+    });
+  },
+
   updateMembers: (id, members) => {
     const model = get().model;
     const current = model?.elementsById[id];
@@ -151,3 +186,21 @@ export const useDesignerStore = create((set, get) => ({
     });
   },
 }));
+
+function updateNestedProperty(source, path, value) {
+  const [key, ...rest] = path;
+
+  if (!key) return value;
+
+  return {
+    ...source,
+    [key]: rest.length > 0
+      ? updateNestedProperty(source?.[key] ?? {}, rest, value)
+      : value,
+  };
+}
+
+function stripGeneratedProperties(properties) {
+  const { qosJson, ...rest } = properties;
+  return rest;
+}

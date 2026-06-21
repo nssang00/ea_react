@@ -10,7 +10,7 @@ export function generateMermaid(model) {
 
     const members = struct.properties?.members ?? [];
     members.forEach((member) => {
-      lines.push(`    ${member.type} ${member.name}`);
+      lines.push(`    ${formatMemberType(member)} ${member.name}`);
     });
 
     lines.push('  }');
@@ -18,8 +18,8 @@ export function generateMermaid(model) {
 
   topics.forEach((topic) => {
     const topicId = sanitizeMermaidId(topic.name);
-    const dataType = topic.properties?.dataType;
-    const qosProfile = topic.properties?.qosProfile;
+    const dataType = topic.properties?.register_type_ref || topic.properties?.dataType;
+    const qosProfile = topic.properties?.topic_qos?.base_name || topic.properties?.qosProfile;
 
     lines.push(`  class ${topicId} {`);
     lines.push('    <<Topic>>');
@@ -47,6 +47,23 @@ export function generateMermaid(model) {
   });
 
   return lines.join('\n');
+}
+
+function formatMemberType(member) {
+  if (member.kind === 'array') {
+    return `${member.type}[${(member.array_dimensions || []).join('][')}]`;
+  }
+
+  if (member.kind === 'sequence') {
+    const bound = member.sequence_max_length ? `, ${member.sequence_max_length}` : '';
+    return `sequence<${member.type}${bound}>`;
+  }
+
+  if (member.kind === 'string' || member.kind === 'wstring') {
+    return member.string_max_length ? `${member.kind}<${member.string_max_length}>` : member.kind;
+  }
+
+  return member.type || member.kind;
 }
 
 function sanitizeMermaidId(value) {

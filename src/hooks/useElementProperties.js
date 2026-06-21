@@ -6,11 +6,12 @@ export function useElementProperties() {
 
   const propertyGroups = useMemo(() => {
     const editableProperties = Object.entries(element?.properties || {})
-      .filter(([, value]) => !Array.isArray(value));
+      .filter(([key, value]) => key !== 'members' && !Array.isArray(value) && typeof value !== 'object');
 
     return {
-      editorProperties: editableProperties.filter(([key]) => key === 'qosXml'),
-      formProperties: editableProperties.filter(([key]) => key !== 'qosXml'),
+      editorProperties: Object.entries(element?.properties || {})
+        .filter(([key]) => key === 'qosJson'),
+      formProperties: editableProperties,
       hasMembers: Array.isArray(element?.properties?.members),
       members: element?.properties?.members,
     };

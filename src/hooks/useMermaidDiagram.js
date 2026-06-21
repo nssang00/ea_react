@@ -1,20 +1,55 @@
 import { useEffect, useMemo, useState } from 'react';
-import mermaid from 'mermaid';
 import { useWorkbenchModel } from './useWorkbenchModel.js';
 import { generateMermaid } from '../utils/mermaidGenerator.js';
 
-mermaid.initialize({
-  startOnLoad: false,
-  securityLevel: 'strict',
-  theme: 'base',
-  themeVariables: {
-    primaryColor: '#eef6ff',
-    primaryBorderColor: '#1677ff',
-    primaryTextColor: '#1f2937',
-    lineColor: '#667085',
-    fontFamily: 'Inter, system-ui, sans-serif',
-  },
-});
+let mermaidRuntimePromise;
+
+function loadMermaidRuntime() {
+  if (window.MermaidRuntime) {
+    return Promise.resolve(window.MermaidRuntime);
+  }
+
+  if (mermaidRuntimePromise) {
+    return mermaidRuntimePromise;
+  }
+
+  mermaidRuntimePromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = './dist/mermaid-runtime.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.MermaidRuntime) {
+        resolve(window.MermaidRuntime);
+      } else {
+        reject(new Error('Mermaid runtime did not initialize.'));
+      }
+    };
+    script.onerror = () => reject(new Error('Mermaid runtime could not be loaded.'));
+    document.head.appendChild(script);
+  }).catch((error) => {
+    mermaidRuntimePromise = undefined;
+    throw error;
+  });
+
+  return mermaidRuntimePromise;
+}
+
+function initializeMermaid(mermaid) {
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'strict',
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#eef6ff',
+      primaryBorderColor: '#1677ff',
+      primaryTextColor: '#1f2937',
+      lineColor: '#667085',
+      fontFamily: 'Inter, system-ui, sans-serif',
+    },
+  });
+
+  return mermaid;
+}
 
 export function useMermaidDiagram() {
   const { model } = useWorkbenchModel();
@@ -28,6 +63,7 @@ export function useMermaidDiagram() {
 
     async function renderDiagram() {
       try {
+        const mermaid = initializeMermaid(await loadMermaidRuntime());
         const { svg } = await mermaid.render(diagramId, mermaidSource);
         if (!disposed) {
           setDiagramSvg(svg);

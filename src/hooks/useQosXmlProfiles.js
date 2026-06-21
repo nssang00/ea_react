@@ -8,7 +8,7 @@ export function useQosXmlProfiles() {
     if (!model) return [];
 
     return Object.values(model.elementsById).filter((element) => (
-      typeof element.properties?.qosXml === 'string'
+      typeof element.properties?.qosJson === 'string'
     ));
   }, [model]);
 
@@ -16,7 +16,7 @@ export function useQosXmlProfiles() {
     profiles,
     hasProfiles: profiles.length > 0,
     qosXmlText: profiles
-      .map((profile) => `<!-- ${profile.name} -->\n${profile.properties.qosXml}`)
+      .map((profile) => `// ${profile.name}\n${profile.properties.qosJson}`)
       .join('\n\n'),
   };
 }

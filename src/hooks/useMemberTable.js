@@ -3,10 +3,10 @@ import { useStructMembers } from './useStructMembers.js';
 export function useMemberTable(elementId, members) {
   const { updateMembers } = useStructMembers(elementId);
 
-  const patchMember = (memberId, patch) => {
+  const patchMember = (memberIndex, patch) => {
     updateMembers(
       elementId,
-      members.map((member) => (member.id === memberId ? { ...member, ...patch } : member))
+      members.map((member, index) => (index === memberIndex ? { ...member, ...patch } : member))
     );
   };
 
@@ -14,14 +14,14 @@ export function useMemberTable(elementId, members) {
     const nextIndex = members.length + 1;
     updateMembers(elementId, [
       ...members,
-      { id: `m-${Date.now()}`, name: `member${nextIndex}`, type: 'string', defaultValue: '' },
+      { name: `member${nextIndex}`, kind: 'string', string_max_length: 255 },
     ]);
   };
 
-  const removeMember = (memberId) => {
+  const removeMember = (memberIndex) => {
     updateMembers(
       elementId,
-      members.filter((member) => member.id !== memberId)
+      members.filter((_, index) => index !== memberIndex)
     );
   };
 

@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Divider, Form, Input, InputNumber, Select, Typography } from 'antd';
-import { useElementProperties } from '../hooks/useElementProperties.js';
 import MemberTable from './MemberTable.jsx';
 import TextEditor from './TextEditor.jsx';
 
@@ -34,17 +33,19 @@ function fieldInputFor(key, value) {
   return <Input />;
 }
 
-export default function PropertyForm() {
+export default function PropertyForm({
+  editorProperties,
+  element,
+  formProperties,
+  hasMembers,
+  members,
+  onAddMember,
+  onPatchMember,
+  onRemoveMember,
+  onUpdateElement,
+  onUpdateProperty,
+}) {
   const [form] = Form.useForm();
-  const {
-    element,
-    formProperties,
-    editorProperties,
-    hasMembers,
-    members,
-    updateElement,
-    updateProperty,
-  } = useElementProperties();
 
   useEffect(() => {
     if (!element) return;
@@ -65,8 +66,8 @@ export default function PropertyForm() {
         layout="vertical"
         onValuesChange={(changed) => {
           const [key, value] = Object.entries(changed)[0];
-          if (key === 'name') updateElement(element.id, { name: value });
-          else if (key !== 'type') updateProperty(element.id, key, value);
+          if (key === 'name') onUpdateElement(element.id, { name: value });
+          else if (key !== 'type') onUpdateProperty(element.id, key, value);
         }}
       >
         <Form.Item label="name" name="name"><Input /></Form.Item>
@@ -80,14 +81,19 @@ export default function PropertyForm() {
       {hasMembers && (
         <>
           <Divider orientation="left">Struct Members</Divider>
-          <MemberTable elementId={element.id} members={members} />
+          <MemberTable
+            members={members}
+            onAddMember={onAddMember}
+            onPatchMember={onPatchMember}
+            onRemoveMember={onRemoveMember}
+          />
         </>
       )}
 
       {editorProperties.map(([key, value]) => (
         <div key={key}>
           <Divider orientation="left">{key}</Divider>
-          <TextEditor value={value} onChange={(nextValue) => updateProperty(element.id, key, nextValue)} />
+          <TextEditor value={value} onChange={(nextValue) => onUpdateProperty(element.id, key, nextValue)} />
         </div>
       ))}
     </div>

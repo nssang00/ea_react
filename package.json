@@ -1,22 +1,22 @@
 {
-  "name": "ea-modeler-esbuild-static",
+  "name": "ea-modeler-js-mvp",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "node esbuild.config.mjs --serve",
-    "build": "node esbuild.config.mjs",
-    "preview": "npx serve dist"
-  },
-  "dependencies": {
-    "@ant-design/icons": "latest",
-    "@xyflow/react": "latest",
-    "antd": "latest",
-    "mermaid": "^11.15.0",
-    "react": "latest",
-    "react-dom": "latest",
-    "zustand": "latest"
+    "start": "npm run build",
+    "dev": "esbuild src/main.jsx src/mermaid-runtime.js --bundle --format=iife --jsx=automatic --sourcemap --outdir=dist --entry-names=[name] --loader:.jsx=jsx --servedir=. --serve=5173",
+    "build": "esbuild src/main.jsx src/mermaid-runtime.js --bundle --format=iife --jsx=automatic --minify --sourcemap --outdir=dist --entry-names=[name] --loader:.jsx=jsx"
   },
   "devDependencies": {
-    "esbuild": "latest"
+    "esbuild": "^0.27.2"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.1.0",
+    "@xyflow/react": "^12.10.0",
+    "antd": "^6.3.1",
+    "mermaid": "^11.13.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.11"
   }
 }

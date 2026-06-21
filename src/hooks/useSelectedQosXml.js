@@ -2,11 +2,11 @@ import { useSelectedElement } from './useSelectedElement.js';
 
 export function useSelectedQosXml() {
   const { element, updateProperty } = useSelectedElement();
-  const qosXml = element?.properties?.qosXml;
+  const qosXml = element?.properties?.qosJson;
 
   const updateQosXml = (nextValue) => {
     if (!element) return;
-    updateProperty(element.id, 'qosXml', nextValue);
+    updateProperty(element.id, 'qosJson', nextValue);
   };
 
   return {

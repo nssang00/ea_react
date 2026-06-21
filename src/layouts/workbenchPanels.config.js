@@ -1,5 +1,9 @@
 import ModelView from '../views/ModelView.jsx';
 import SearchView from '../views/SearchView.jsx';
+import TypesView from '../views/TypesView.jsx';
+import QosExplorerView from '../views/QosExplorerView.jsx';
+import DomainsView from '../views/DomainsView.jsx';
+import DomainParticipantsView from '../views/DomainParticipantsView.jsx';
 import DiagramView from '../views/DiagramView.jsx';
 import MermaidView from '../views/MermaidView.jsx';
 import IdlView from '../views/IdlView.jsx';
@@ -20,6 +24,10 @@ export const workbenchPanelsConfig = {
       defaultActiveView: 'model',
       views: [
         { id: 'model', label: 'Model', component: ModelView },
+        { id: 'types', label: 'Types', component: TypesView },
+        { id: 'qos', label: 'QoS', component: QosExplorerView },
+        { id: 'domains', label: 'Domains', component: DomainsView },
+        { id: 'participants', label: 'Participants', component: DomainParticipantsView },
         { id: 'search', label: 'Search', component: SearchView },
       ],
     },
@@ -31,7 +39,7 @@ export const workbenchPanelsConfig = {
         { id: 'diagram', label: 'Diagram', component: DiagramView },
         { id: 'mermaid', label: 'Mermaid', component: MermaidView },
         { id: 'idl', label: 'IDL', component: IdlView },
-        { id: 'qosXml', label: 'QoS XML', component: QosXmlView },
+        { id: 'qosXml', label: 'QoS JSON', component: QosXmlView },
       ],
     },
     {

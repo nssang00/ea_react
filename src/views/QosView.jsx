@@ -14,14 +14,14 @@ export default function QosView() {
   if (!hasQosXml) {
     return (
       <div className="workbench-view">
-        <Empty description="Selected element has no QoS XML." />
+        <Empty description="Selected element has no QoS JSON." />
       </div>
     );
   }
 
   return (
     <div className="workbench-view">
-      <Text type="secondary">QoS XML for {element.name}</Text>
+      <Text type="secondary">QoS JSON for {element.name}</Text>
       <div style={{ marginTop: 12 }}>
         <TextEditor value={qosXml} onChange={updateQosXml} />
       </div>

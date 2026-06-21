@@ -8,7 +8,7 @@ export default function QosXmlView() {
   if (!hasProfiles) {
     return (
       <div className="workbench-view workbench-view--muted">
-        <Empty description="No QoS XML profiles in this model." />
+        <Empty description="No QoS JSON profiles in this model." />
       </div>
     );
   }
