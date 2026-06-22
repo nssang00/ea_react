@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "npm run build",
+    "watch": "esbuild src/main.jsx src/mermaid-runtime.js --bundle --format=iife --jsx=automatic --sourcemap --outdir=dist --entry-names=[name] --loader:.jsx=jsx --watch",
     "dev": "esbuild src/main.jsx src/mermaid-runtime.js --bundle --format=iife --jsx=automatic --sourcemap --outdir=dist --entry-names=[name] --loader:.jsx=jsx --servedir=. --serve=5173",
     "build": "esbuild src/main.jsx src/mermaid-runtime.js --bundle --format=iife --jsx=automatic --minify --sourcemap --outdir=dist --entry-names=[name] --loader:.jsx=jsx"
   },
