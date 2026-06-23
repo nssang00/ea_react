@@ -6,6 +6,7 @@ export function useSelectedElement() {
   const selectElement = useDesignerStore((state) => state.selectElement);
   const updateElement = useDesignerStore((state) => state.updateElement);
   const updateProperty = useDesignerStore((state) => state.updateProperty);
+  const updateQosPath = useDesignerStore((state) => state.updateQosPath);
 
   const element = selectedElementId && model
     ? model.elementsById[selectedElementId]
@@ -18,5 +19,6 @@ export function useSelectedElement() {
     selectElement,
     updateElement,
     updateProperty,
+    updateQosPath,
   };
 }

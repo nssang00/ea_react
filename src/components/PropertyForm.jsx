@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Divider, Form, Input, InputNumber, Select, Typography } from 'antd';
 import MemberTable from './MemberTable.jsx';
+import QosPropertyFields from './QosPropertyFields.jsx';
 import TextEditor from './TextEditor.jsx';
 
 const { Text } = Typography;
@@ -44,6 +45,8 @@ export default function PropertyForm({
   onRemoveMember,
   onUpdateElement,
   onUpdateProperty,
+  onUpdateQosProperty,
+  qosFields,
 }) {
   const [form] = Form.useForm();
 
@@ -89,6 +92,8 @@ export default function PropertyForm({
           />
         </>
       )}
+
+      <QosPropertyFields fields={qosFields} onUpdate={onUpdateQosProperty} />
 
       {editorProperties.map(([key, value]) => (
         <div key={key}>

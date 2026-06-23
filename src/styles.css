@@ -361,6 +361,30 @@ body {
   padding-right: 2px;
 }
 
+.qos-property-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.qos-property-groups .ant-collapse-content-box {
+  padding: 12px !important;
+}
+
+.qos-property-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: #475467;
+  font-size: 12px;
+}
+
+.qos-property-field > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .qos-node-field {
   display: flex;
   gap: 8px;

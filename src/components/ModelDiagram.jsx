@@ -122,6 +122,7 @@ export default function ModelDiagram({
   hasModel,
   nodes,
   onNodesChange,
+  onEdgesChange,
   onSelectElement,
   onUpdateQosProperty,
 }) {
@@ -149,6 +150,7 @@ export default function ModelDiagram({
         nodeTypes={nodeTypes}
         fitView
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={(_, node) => onSelectElement(node.data?.selectId ?? node.id)}
       >
         <Background />

@@ -139,6 +139,7 @@ export const useDesignerStore = create((set, get) => ({
       };
       const nextModel = {
         ...model,
+        ddsJson: updateDdsQosProfile(model.ddsJson, current.name, entityKey, path, value),
         elementsById: {
           ...model.elementsById,
           [id]: nextElement,
@@ -150,6 +151,51 @@ export const useDesignerStore = create((set, get) => ({
         modelByProjectId: model
           ? { ...state.modelByProjectId, [state.modelProjectId]: nextModel }
           : state.modelByProjectId,
+        dirty: true,
+      };
+    });
+  },
+
+  updateQosPath: (profileId, path, value) => {
+    const model = get().model;
+    const profile = model?.elementsById[profileId];
+    if (!profile || profile.type !== 'QosProfile') return;
+
+    set((state) => {
+      const currentProfile = state.model.elementsById[profileId];
+      const nextProperties = updateNestedProperty(currentProfile.properties, path.split('.'), value);
+      const nextProfile = {
+        ...currentProfile,
+        properties: {
+          ...nextProperties,
+          qosJson: JSON.stringify(stripGeneratedProperties(nextProperties), null, 2),
+        },
+      };
+      const nextElementsById = Object.fromEntries(Object.entries(state.model.elementsById).map(([id, element]) => {
+        if (id === profileId) return [id, nextProfile];
+        if (element.type === 'QosPolicy' && element.properties?.policyPath) {
+          const policyValue = readNestedProperty(nextProfile.properties, element.properties.policyPath.split('.'));
+          return [id, {
+            ...element,
+            properties: {
+              ...element.properties,
+              qosJson: JSON.stringify(policyValue ?? {}, null, 2),
+              ...primitiveProperties(policyValue),
+            },
+          }];
+        }
+        if (element.type === 'QosValue' && element.properties?.policyPath) {
+          return [id, {
+            ...element,
+            properties: { ...element.properties, value: readNestedProperty(nextProfile.properties, element.properties.policyPath.split('.')) },
+          }];
+        }
+        return [id, element];
+      }));
+      const nextModel = { ...state.model, elementsById: nextElementsById };
+      return {
+        model: nextModel,
+        modelByProjectId: { ...state.modelByProjectId, [state.modelProjectId]: nextModel },
         dirty: true,
       };
     });
@@ -203,4 +249,33 @@ function updateNestedProperty(source, path, value) {
 function stripGeneratedProperties(properties) {
   const { qosJson, ...rest } = properties;
   return rest;
+}
+
+function readNestedProperty(source, path) {
+  return path.reduce((value, key) => value?.[key], source);
+}
+
+function primitiveProperties(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item === null || typeof item !== 'object' || Array.isArray(item)));
+}
+
+function updateDdsQosProfile(ddsJson, profileName, entityKey, path, value) {
+  const profiles = ddsJson?.qos?.qos_library?.qos_profiles;
+  if (!Array.isArray(profiles)) return ddsJson;
+
+  return {
+    ...ddsJson,
+    qos: {
+      ...ddsJson.qos,
+      qos_library: {
+        ...ddsJson.qos.qos_library,
+        qos_profiles: profiles.map((profile) => (
+          profile.name === profileName
+            ? updateNestedProperty(profile, [entityKey, ...path.split('.')], value)
+            : profile
+        )),
+      },
+    },
+  };
 }
