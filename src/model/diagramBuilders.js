@@ -13,26 +13,9 @@ export function buildDiagram(model, activeExplorerViewId, selectedElementId) {
 }
 
 export function buildTypeDiagram(model) {
-  const modules = elementsOf(model, 'Module');
   const types = typeElements(model);
-  const nodes = [];
   const edges = [];
-  let y = 40;
-
-  modules.forEach((module) => {
-    const children = types.filter((item) => item.parentId === module.id);
-    if (!children.length) return;
-    const rows = Math.ceil(children.length / 2);
-    const height = Math.max(220, rows * 190 + 70);
-    nodes.push(containerNode(`group-${module.id}`, module.name, 40, y, 660, height));
-    children.forEach((item, index) => nodes.push(typeNode(item, 90 + (index % 2) * 300, y + 50 + Math.floor(index / 2) * 180)));
-    y += height + 40;
-  });
-
-  const containedIds = new Set(nodes.map((node) => node.data?.selectId).filter(Boolean));
-  types.filter((item) => !containedIds.has(item.id)).forEach((item, index) => {
-    nodes.push(typeNode(item, 760, 80 + index * 180));
-  });
+  const nodes = types.map((item, index) => typeNode(item, 60 + index * 340, 80));
 
   types.filter((item) => ['Struct', 'Union'].includes(item.type)).forEach((item) => {
     typeReferences(item).forEach(({ name, type }) => {
@@ -55,6 +38,14 @@ export function buildQosDiagram(model, selectedElementId) {
   const subscriber = participant?.properties?.subscribers?.[0];
   const writer = publisher?.data_writers?.find((item) => item.topic_ref === topic?.name) ?? publisher?.data_writers?.[0];
   const reader = subscriber?.data_readers?.find((item) => item.topic_ref === topic?.name) ?? subscriber?.data_readers?.[0];
+  const specs = [
+    ['domain_participant_qos', 'participant', 'DomainParticipant QoS', 600, 40],
+    ['topic_qos', 'topic', 'Topic QoS', 600, 430],
+    ['publisher_qos', 'publisher', 'Publisher QoS', 600, 820],
+    ['subscriber_qos', 'subscriber', 'Subscriber QoS', 1000, 40],
+    ['datawriter_qos', 'datawriter', 'DataWriter QoS', 1000, 430],
+    ['datareader_qos', 'datareader', 'DataReader QoS', 1000, 820],
+  ];
   const fallbackRows = {
     domain_participant_qos: [row('name', participant?.name ?? 'DomainParticipant'), row('domain', participant?.properties?.domain_ref)],
     topic_qos: [row('topic', topic?.name ?? 'Topic'), row('type', topic?.properties?.register_type_ref)],
@@ -63,22 +54,12 @@ export function buildQosDiagram(model, selectedElementId) {
     datawriter_qos: [row('writer', writer?.name ?? 'DataWriter'), row('topic', writer?.topic_ref ?? topic?.name)],
     datareader_qos: [row('reader', reader?.name ?? 'DataReader'), row('topic', reader?.topic_ref ?? topic?.name)],
   };
-  const specs = [
-    ['domain_participant_qos', 'participant', 'DomainParticipant QoS', 560, 40],
-    ['topic_qos', 'topic', 'Topic QoS', 560, 260],
-    ['publisher_qos', 'publisher', 'Publisher QoS', 560, 480],
-    ['subscriber_qos', 'subscriber', 'Subscriber QoS', 940, 40],
-    ['datawriter_qos', 'datawriter', 'DataWriter QoS', 940, 260],
-    ['datareader_qos', 'datareader', 'DataReader QoS', 940, 480],
-  ];
   const nodes = [
-    entityNode(`${profile.id}-library`, 'library', 'QoS Library', 'DDS QoS Library', 40, 300,
-      [row('profile', profile.name), row('scope', model?.ddsJson?.qos?.qos_library?.name ?? 'qos_library')], profile.id),
-    entityNode(profile.id, 'profile', 'QoS Profile', profile.name, 300, 300, profileRows(profile), profile.id),
+    entityNode(`${profile.id}-library`, 'library', 'QoS Library', 'DDS QoS Library', 40, 430, [row('profile', profile.name)], profile.id),
+    entityNode(profile.id, 'profile', 'QoS Profile', profile.name, 320, 430, profileRows(profile), profile.id),
     ...specs.map(([key, kind, title, x, y]) => {
-      const policies = editableRows(profile.properties?.[key], profile.id, key);
-      return entityNode(`${profile.id}-${key}`, kind, title, key.replace(/_qos$/, '').replace(/_/g, ' '), x, y,
-        policies.length ? policies : fallbackRows[key], profile.id);
+      const fields = editableRows(profile.properties?.[key], profile.id, key);
+      return entityNode(`${profile.id}-${key}`, kind, title, key.replace(/_qos$/, '').replace(/_/g, ' '), x, y, fields.length ? fields : fallbackRows[key], profile.id);
     }),
   ];
   const ids = Object.fromEntries(specs.map(([key]) => [key, `${profile.id}-${key}`]));
@@ -94,72 +75,61 @@ export function buildQosDiagram(model, selectedElementId) {
 
 export function buildDomainDiagram(model) {
   const domains = elementsOf(model, 'Domain');
-  const topics = elementsOf(model, 'Topic');
-  const structs = elementsOf(model, 'Struct');
-  const nodes = [];
-  const edges = [];
-  const registrationIds = new Map();
-
-  domains.forEach((domain, index) => {
-    nodes.push(entityNode(domain.id, 'domain', 'Domain', domain.name, 80, 120 + index * 260, domainRows(domain), domain.id));
-    (domain.properties?.register_types ?? []).forEach((registration, registrationIndex) => {
-      const id = `register-type-${domain.id}-${registrationIndex}`;
-      registrationIds.set(`${domain.id}:${registration.name}`, id);
-      nodes.push(entityNode(id, 'registerType', registration.name, 'Registered Type', 370, 80 + index * 260 + registrationIndex * 120,
-        [row('name', registration.name), row('type_ref', registration.type_ref)], findStruct(model, registration.type_ref)?.id));
-      edges.push(edge(domain.id, id, 'registers', 'qos-edge qos-edge--domain'));
-    });
-  });
-  topics.forEach((topic, index) => {
-    nodes.push(entityNode(topic.id, 'topic', 'Topic', topic.name, 660, 80 + index * 150, topicRows(topic), topic.id));
-    const registrationId = registrationIds.get(`${topic.parentId}:${topic.properties?.register_type_ref}`);
-    if (registrationId) edges.push(edge(registrationId, topic.id, 'topic', 'qos-edge qos-edge--registerType'));
-    const target = structs.find((item) => item.name === simpleName(topic.properties?.register_type_ref));
-    if (target) edges.push(edge(topic.id, target.id, 'type', 'qos-edge qos-edge--topic'));
-  });
-  structs.forEach((item, index) => nodes.push(typeNode(item, 960, 80 + index * 180)));
-  return { nodes, edges };
+  return {
+    nodes: domains.map((domain, index) => ({
+      id: domain.id,
+      nodeType: 'domainNode',
+      position: { x: 60, y: 50 + index * 290 },
+      width: 300,
+      data: {
+        label: domain.name,
+        domainId: domain.properties?.domain_id,
+        selectId: domain.id,
+        topics: elementsOf(model, 'Topic')
+          .filter((topic) => topic.parentId === domain.id)
+          .map((topic) => ({ name: topic.name, typeRef: topic.properties?.register_type_ref })),
+      },
+    })),
+    edges: [],
+  };
 }
 
 export function buildParticipantDiagram(model) {
   const participants = elementsOf(model, 'DomainParticipant');
-  const topics = elementsOf(model, 'Topic');
-  const nodes = topics.map((item, index) => entityNode(item.id, 'topic', 'Topic', item.name, 1010, 100 + index * 140, topicRows(item), item.id));
+  const nodes = participants.map((participant, index) => participantNode(participant, 60 + index * 330, 80));
   const edges = [];
-  participants.forEach((participant, participantIndex) => {
-    const baseY = 160 + participantIndex * 320;
-    nodes.push(entityNode(participant.id, 'participant', 'DomainParticipant', participant.name, 80, baseY, participantRows(participant), participant.id));
-    (participant.properties?.publishers ?? []).forEach((publisher, index) => {
-      const publisherId = `${participant.id}-publisher-${publisher.name}`;
-      nodes.push(entityNode(publisherId, 'publisher', 'Publisher', publisher.name, 390, baseY - 80 + index * 150, [row('writers', publisher.data_writers?.length ?? 0)], participant.id));
-      edges.push(edge(participant.id, publisherId, 'publisher', 'qos-edge qos-edge--participant'));
-      (publisher.data_writers ?? []).forEach((writer, writerIndex) => {
-        const id = `${participant.id}-writer-${writer.name}`;
-        nodes.push(entityNode(id, 'datawriter', 'DataWriter', writer.name, 700, baseY - 90 + index * 150 + writerIndex * 120, [row('topic_ref', writer.topic_ref)], participant.id));
-        edges.push(edge(publisherId, id, 'writer', 'qos-edge qos-edge--publisher'));
-        pushTopicEdge(edges, topics, id, writer.topic_ref, 'writes');
-      });
-    });
-    (participant.properties?.subscribers ?? []).forEach((subscriber, index) => {
-      const subscriberId = `${participant.id}-subscriber-${subscriber.name}`;
-      nodes.push(entityNode(subscriberId, 'subscriber', 'Subscriber', subscriber.name, 390, baseY + 70 + index * 150, [row('readers', subscriber.data_readers?.length ?? 0)], participant.id));
-      edges.push(edge(participant.id, subscriberId, 'subscriber', 'qos-edge qos-edge--participant'));
-      (subscriber.data_readers ?? []).forEach((reader, readerIndex) => {
-        const id = `${participant.id}-reader-${reader.name}`;
-        nodes.push(entityNode(id, 'datareader', 'DataReader', reader.name, 700, baseY + 60 + index * 150 + readerIndex * 120, [row('topic_ref', reader.topic_ref)], participant.id));
-        edges.push(edge(subscriberId, id, 'reader', 'qos-edge qos-edge--subscriber'));
-        pushTopicEdge(edges, topics, id, reader.topic_ref, 'reads');
+  const writers = participants.flatMap((participant) => participantEndpoints(participant).filter((endpoint) => endpoint.direction === 'write').map((endpoint) => ({ participant, endpoint })));
+  const readers = participants.flatMap((participant) => participantEndpoints(participant).filter((endpoint) => endpoint.direction === 'read').map((endpoint) => ({ participant, endpoint })));
+  writers.forEach((writer) => {
+    readers.forEach((reader) => {
+      if (writer.endpoint.topicRef !== reader.endpoint.topicRef) return;
+      edges.push({
+        ...edge(writer.participant.id, reader.participant.id, writer.endpoint.topicRef, 'qos-edge qos-edge--datawriter'),
+        animated: true,
       });
     });
   });
   return { nodes, edges };
 }
 
-function typeNode(item, x, y) { return entityNode(item.id, variant(item.type), item.type, item.name, x, y, typeRows(item), item.id); }
+function typeNode(item, x, y) {
+  const node = entityNode(item.id, variant(item.type), item.type, item.name, x, y, typeRows(item), item.id);
+  return {
+    ...node,
+    nodeType: 'typeNode',
+    data: { ...node.data, stereotype: item.type.toLowerCase() },
+  };
+}
+function libraryNode(library, x, y) { return { id: library.id, nodeType: 'libraryNode', position: { x, y }, width: 190, data: { label: library.name, selectId: library.id } }; }
+function participantNode(participant, x, y) { return { id: participant.id, nodeType: 'participantNode', position: { x, y }, width: 280, data: { label: participant.name, domainRef: participant.properties?.domain_ref, endpoints: participantEndpoints(participant), selectId: participant.id } }; }
+function participantEndpoints(participant) { return [
+  ...(participant.properties?.publishers ?? []).flatMap((publisher) => (publisher.data_writers ?? []).map((writer) => ({ direction: 'write', owner: publisher.name, name: writer.name, topicRef: writer.topic_ref, qosProfileRef: writer.qos_profile_ref }))),
+  ...(participant.properties?.subscribers ?? []).flatMap((subscriber) => (subscriber.data_readers ?? []).map((reader) => ({ direction: 'read', owner: subscriber.name, name: reader.name, topicRef: reader.topic_ref, qosProfileRef: reader.qos_profile_ref }))),
+]; }
 function entityNode(id, kind, label, subtitle, x, y, fields, selectId) {
   const visibleFields = fields.filter((item) => item.value !== undefined);
   return { id, nodeType: 'qosNode', position: { x, y }, width: kind === 'library' || kind === 'profile' ? 220 : 310,
-    height: Math.max(132, 76 + visibleFields.length * 29), data: { label, type: subtitle, variant: kind, selectId, fields: visibleFields } };
+    height: Math.max(132, Math.min(360, 76 + visibleFields.length * 29)), data: { label, type: subtitle, variant: kind, selectId, fields: visibleFields } };
 }
 function containerNode(id, label, x, y, width, height) { return { id, nodeType: 'diagramGroup', position: { x, y }, width, height, draggable: false, selectable: false, zIndex: 0, data: { label, type: 'Module', isContainer: true } }; }
 function edge(source, target, label, className) { return { id: `e-${source}-${target}-${label}`, source, target, label, className }; }

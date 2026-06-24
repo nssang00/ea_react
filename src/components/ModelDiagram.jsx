@@ -13,6 +13,70 @@ function ModelNode({ data, selected }) {
   );
 }
 
+function TypeNode({ data, selected }) {
+  return (
+    <div className={`uml-type-node uml-type-node--${data.variant} ${selected ? 'selected-node' : ''}`}>
+      <Handle className="flow-handle" type="target" position={Position.Left} />
+      <div className="uml-type-node-header">
+        <div className="uml-type-node-stereotype">«{data.stereotype ?? data.label?.toLowerCase()}»</div>
+        <strong>{data.type}</strong>
+      </div>
+      <div className="uml-type-node-members">
+        {data.fields?.length > 0 ? data.fields.map((field) => (
+          <div className="uml-type-node-member" key={field.key}>
+            <span>+ {field.key}</span>
+            <b>{String(field.value ?? '')}</b>
+          </div>
+        )) : <span className="uml-type-node-empty">No members</span>}
+      </div>
+      <Handle className="flow-handle" type="source" position={Position.Right} />
+    </div>
+  );
+}
+
+function DomainNode({ data, selected }) {
+  return (
+    <div className={`dds-card dds-card--domain ${selected ? 'selected-node' : ''}`}>
+      <Handle className="flow-handle" type="target" position={Position.Left} />
+      <CardHeader eyebrow="Domain" title={data.label} subtitle={`ID: ${data.domainId ?? '-'}`} />
+      <div className="dds-card-body">
+        <CardSectionLabel>Topics</CardSectionLabel>
+        {data.topics?.map((topic) => <TopicRow key={topic.name} topic={topic} />)}
+        {!data.topics?.length && <div className="dds-card-empty">No topics</div>}
+      </div>
+      <Handle className="flow-handle" type="source" position={Position.Right} />
+    </div>
+  );
+}
+
+function ParticipantNode({ data, selected }) {
+  const writers = data.endpoints?.filter((endpoint) => endpoint.direction === 'write') ?? [];
+  const readers = data.endpoints?.filter((endpoint) => endpoint.direction === 'read') ?? [];
+  return (
+    <div className={`dds-card dds-card--participant ${selected ? 'selected-node' : ''}`}>
+      <Handle className="flow-handle" type="target" position={Position.Left} />
+      <CardHeader eyebrow="DomainParticipant" title={data.label} subtitle={data.domainRef} />
+      <div className="dds-card-body">
+        {writers.length > 0 && <EndpointSection label="DataWriters" endpoints={writers} kind="write" />}
+        {readers.length > 0 && <EndpointSection label="DataReaders" endpoints={readers} kind="read" />}
+        {!writers.length && !readers.length && <div className="dds-card-empty">No endpoints</div>}
+      </div>
+      <Handle className="flow-handle" type="source" position={Position.Right} />
+    </div>
+  );
+}
+
+function LibraryNode({ data }) {
+  return <div className="dds-library-node">📚 {data.label}</div>;
+}
+
+function CardHeader({ eyebrow, title, subtitle }) {
+  return <div className="dds-card-header"><div className="dds-card-eyebrow">{eyebrow}</div><strong>{title}</strong>{subtitle && <small>{subtitle}</small>}</div>;
+}
+function CardSectionLabel({ children }) { return <div className="dds-card-section-label">{children}</div>; }
+function TopicRow({ topic }) { return <div className="dds-topic-row"><span>◈ {topic.name}</span><small>{topic.typeRef}</small></div>; }
+function EndpointSection({ label, endpoints, kind }) { return <><CardSectionLabel>{label}</CardSectionLabel>{endpoints.map((endpoint) => <div className={`dds-endpoint-row dds-endpoint-row--${kind}`} key={`${endpoint.owner}-${endpoint.name}`}><strong>{endpoint.name}</strong><small>topic: {endpoint.topicRef}</small>{endpoint.qosProfileRef && <small>qos: {endpoint.qosProfileRef.split('::').at(-1)}</small>}</div>)}</>; }
+
 function QosNode({ data, selected }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -114,6 +178,10 @@ function shortFieldLabel(key) {
 const nodeTypes = {
   diagramGroup: DiagramGroup,
   modelNode: ModelNode,
+  typeNode: TypeNode,
+  domainNode: DomainNode,
+  participantNode: ParticipantNode,
+  libraryNode: LibraryNode,
   qosNode: QosNode,
 };
 
@@ -169,6 +237,10 @@ export default function ModelDiagram({
 }
 
 function miniMapNodeColor(node) {
+  if (node.type === 'typeNode') return '#6392c7';
+  if (node.type === 'domainNode') return '#38bdf8';
+  if (node.type === 'participantNode') return '#f43f5e';
+  if (node.type === 'libraryNode') return '#64748b';
   if (node.type !== 'qosNode') return '#ffffff';
 
   const colors = {

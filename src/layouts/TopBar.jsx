@@ -21,7 +21,7 @@ export default function TopBar() {
 
   return (
     <Header className="app-header">
-      <div className="app-title">RTI System Designer MVP</div>
+      <div className="app-title">System Designer</div>
 
       <Tag color={dirty ? 'orange' : 'green'}>
         {dirty ? 'modified' : 'clean'}

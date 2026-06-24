@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { applyEdgeChanges, applyNodeChanges, MarkerType, Position, useEdgesState, useNodesState } from '@xyflow/react';
 import { useWorkbenchModel } from './useWorkbenchModel.js';
 import { buildDiagram } from '../model/diagramBuilders.js';
-import { avoidNodeOverlaps } from '../utils/diagramLayout.js';
 
 export function useDiagramModel() {
   const { activeExplorerViewId, model, selectedElementId, selectElement, updateQosProperty } = useWorkbenchModel();
   const computedNodes = useMemo(() => {
     if (!model) return [];
-    return avoidNodeOverlaps(buildDiagram(model, activeExplorerViewId, selectedElementId).nodes)
+    return buildDiagram(model, activeExplorerViewId, selectedElementId).nodes
       .map((node) => toFlowNode(node, model, selectedElementId));
   }, [activeExplorerViewId, model, selectedElementId]);
   const [nodes, setNodes] = useNodesState(computedNodes);
@@ -26,15 +25,15 @@ export function useDiagramModel() {
   useEffect(() => {
     setNodes((current) => {
       const positions = Object.fromEntries(current.map((node) => [node.id, node.position]));
-      return avoidNodeOverlaps(computedNodes.map((node) => ({
+      return computedNodes.map((node) => ({
         ...node,
         position: positions[node.id] ?? node.position,
-      })));
+      }));
     });
   }, [computedNodes, setNodes]);
 
   const onNodesChange = useCallback((changes) => {
-    setNodes((current) => avoidNodeOverlaps(applyNodeChanges(changes, current)));
+    setNodes((current) => applyNodeChanges(changes, current));
   }, [setNodes]);
   useEffect(() => setEdges(computedEdges), [computedEdges, setEdges]);
   const onEdgesChange = useCallback((changes) => setEdges((current) => applyEdgeChanges(changes, current)), [setEdges]);
